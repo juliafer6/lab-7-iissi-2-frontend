@@ -4,4 +4,8 @@ function getProductCategories() {
   return get('productCategories/')
 }
 
-export { getProductCategories }
+function create(values) {
+  return post('products', values)
+}
+
+export { getProductCategories, create }

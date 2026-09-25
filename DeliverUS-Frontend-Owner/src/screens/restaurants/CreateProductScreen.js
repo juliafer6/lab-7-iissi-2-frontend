@@ -16,6 +16,7 @@ import ImagePicker from '../../components/ImagePicker'
 export default function CreateProductScreen({ navigation, route }) {
   const [open, setOpen] = useState(false)
   const [productCategories, setProductCategories] = useState([])
+  const [backendErrors, setBackendErrors] = useState([])
 
   const initialProductValues = {
     name: null,
@@ -26,6 +27,14 @@ export default function CreateProductScreen({ navigation, route }) {
     productCategoryId: null,
     availability: true
   }
+  // Añadimos validationschema
+  const validationSchema = yup.object().shape({
+    name: yup.string().max(255, 'Name too long').required('Name is required'),
+    description: yup.string().max(255, 'Description too long').required('Description is required'),
+    price: yup.number().positive('Please enter a valid price value').required('Price is required'),
+    order: yup.number().positive().integer(),
+    productCategoryId: yup.number().positive.integer().required('This field is required'),
+  })
   
   useEffect(() => {
     async function fetchProductCategories() {
@@ -51,11 +60,30 @@ export default function CreateProductScreen({ navigation, route }) {
     }
     fetchProductCategories()
   }, [])
-
+  // Creamos producto
+  const createProduct = async (values) => {
+    setBackendErrors([])
+    try {
+      const createdProduct = await create(values)
+      // Si todo va bien enseñamos
+      showMessage({
+        message: `Product ${createdProduct} successfully created`,
+        type: 'success',
+        style: GlobalStyles.flashStyle,
+        title: GlobalStyles.flashTextStyle
+      })
+      navigation.navigate('RestaurantDetailScreen', { id: route.params.id, dirty: true })
+    } catch (error) {
+      console.log(error)
+      setBackendErrors(error.errors)
+    }
+  }
   
   return (
     <Formik
+      validationSchema={validationSchema}
       initialValues={initialProductValues}
+      onSubmit={createProduct}
     >
       {({ handleSubmit, setFieldValue, values }) => (
         <ScrollView>
@@ -80,7 +108,10 @@ export default function CreateProductScreen({ navigation, route }) {
                 style={{ backgroundColor: GlobalStyles.brandBackground }}
                 dropDownStyle={{ backgroundColor: '#fafafa' }}
               />
-            
+              <ErrorMessage
+                name={'productCategoryId'}
+                render={msg => <TextError>{msg}</TextError>}
+              />
 
               <TextRegular>Is it available?</TextRegular>
               <Switch
@@ -104,10 +135,15 @@ export default function CreateProductScreen({ navigation, route }) {
                 onImagePicked={result => setFieldValue('image', result)}
               />
 
- 
+              {/*Cambiar onPress para que llame a handleSubmit*/}
+              {backendErrors && backendErrors.map((error, index) => (
+              <TextError key={index}>
+                {error.param}-{error.msg}
+              </TextError>
+              ))}
 
               <Pressable
-                onPress={() => console.log('Button pressed')}
+                onPress={handleSubmit} // Cambiamos por handlesubmit
                 style={({ pressed }) => [
                   {
                     backgroundColor: pressed

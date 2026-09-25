@@ -11,4 +11,8 @@ function getRestaurantCategories() {
   return get('restaurantCategories')
 }
 
-export { getAll, getDetail, getRestaurantCategories }
+function create (data) {
+  return post('restaurants', data)
+}
+
+export { getAll, getDetail, getRestaurantCategories, create }
